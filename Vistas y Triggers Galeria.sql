@@ -35,8 +35,27 @@ ON Venta
 AFTER INSERT
 AS
 BEGIN
-    UPDATE Obra
-    SET Estado = 'Vendida'
-    WHERE IdObra IN (SELECT IdObra FROM inserted);
+    BEGIN TRY
+        BEGIN TRANSACTION; 
+
+        -- Actualizamos el estado de las obras vendidas
+        UPDATE Obra
+        SET Estado = 'Vendida'
+        WHERE IdObra IN (SELECT IdObra FROM inserted);
+
+        -- Confirmamos los cambios
+        COMMIT TRANSACTION;
+
+        PRINT 'El estado de la obra fue actualizado correctamente a "Vendida".';
+    END TRY
+
+    BEGIN CATCH
+        -- Si ocurre un error, revertimos
+        IF @@TRANCOUNT > 0
+            ROLLBACK TRANSACTION;
+
+        PRINT 'Error al intentar actualizar el estado de la obra.';
+        PRINT ERROR_MESSAGE();
+    END CATCH
 END;
 GO
