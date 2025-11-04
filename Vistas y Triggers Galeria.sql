@@ -1,8 +1,9 @@
 --Creo la vista para ver las subastas que se encuentran activas en este momento
 
-USE GaleriaDeArte;
+USE GaleriaDeArteV2;
 GO
-CREATE VIEW SubastasActivas
+
+CREATE OR ALTER VIEW SubastasActivas
 AS
 SELECT 
     s.IdSubasta,
@@ -11,9 +12,10 @@ SELECT
     l.PrecioActual,
     s.FechaInicio,
     s.FechaCierre
-FROM Subasta s
-JOIN Lote l ON s.IdSubasta = l.IdSubasta
-JOIN Obra o ON l.IdObra = o.IdObra
+FROM Subastas s
+JOIN Lotes l ON s.IdSubasta = l.IdSubasta
+JOIN ObrasXLotes oxl ON l.IdLote = oxl.IdLote
+JOIN Obras o ON oxl.IdObra = o.IdObra
 WHERE s.FechaCierre > GETDATE();
 GO
 
@@ -28,29 +30,27 @@ SELECT * FROM SubastasActivas;
 
 -- Creo un trigger para que cuando una obra se venda actualice automaticamente su estado en la tabla correspondiente
 
-USE GaleriaDeArte;
+USE GaleriaDeArteV2;
 GO
-CREATE TRIGGER CambiarEstadoObra_Venta
-ON Venta
+CREATE OR ALTER TRIGGER CambiarEstadoObra_Venta
+ON Ventas
 AFTER INSERT
 AS
 BEGIN
-    BEGIN TRY
-        BEGIN TRANSACTION; 
+    SET NOCOUNT ON;
 
-        -- Actualizamos el estado de las obras vendidas
-        UPDATE Obra
+    BEGIN TRY
+        BEGIN TRANSACTION;
+
+        UPDATE Obras
         SET Estado = 'Vendida'
         WHERE IdObra IN (SELECT IdObra FROM inserted);
 
-        -- Confirmamos los cambios
         COMMIT TRANSACTION;
 
         PRINT 'El estado de la obra fue actualizado correctamente a "Vendida".';
     END TRY
-
     BEGIN CATCH
-        -- Si ocurre un error, revertimos
         IF @@TRANCOUNT > 0
             ROLLBACK TRANSACTION;
 
