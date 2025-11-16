@@ -30,10 +30,14 @@ BEGIN
             ISNULL(AVG(c.Estrellas), 0) AS PromedioEstrellas
         FROM Obras o
         LEFT JOIN Calificaciones c ON o.IdObra = c.IdObra
+          
         GROUP BY o.IdObra, o.Titulo
         ORDER BY o.Titulo;
     END
 END
 
 EXEC sp_ObtenerPromedioCalificaciones;
+
+EXEC sp_ObtenerPromedioCalificaciones @IdObra = 5;
+
 
